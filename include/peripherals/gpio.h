@@ -3,7 +3,10 @@
 
 #include "peripherals/base.h"
 
+//! GPFSEL1 is the register that contains
+//! bits for controlling pin 14 and 15.
 #define GPFSEL1         (PBASE+0x00200004)
+
 #define GPSET0          (PBASE+0x0020001C)
 #define GPCLR0          (PBASE+0x00200028)
 #define GPPUD           (PBASE+0x00200094)

@@ -1,0 +1,20 @@
+SPKernel
+--------
+Personal side project for learning operating systems development from the ground up.
+
+The hope in the future is to replace the majority of the source code currently.
+In this project with my own code. However, for now this kernel is just for
+educational purposes.
+
+Resources
+---------
+Majority of the source code found in this Kernel is courtesy of the following sources:
+
+https://github.com/bztsrc/raspi3-tutorial
+--> Provided implementation details for using devices that exist on the Raspberry pi
+
+https://s-matyukevich.github.io/raspberry-pi-os/docs/Introduction.html
+--> Large amount of source code originated from this source.
+
+
+Last Edit: 09/09/20

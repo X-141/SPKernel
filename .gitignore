@@ -1,0 +1,5 @@
+*.out
+build/
+kernel8.img
+tags
+tags_sorted_by_file

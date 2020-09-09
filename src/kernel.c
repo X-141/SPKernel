@@ -6,10 +6,9 @@
 void kernel_main(void)
 {
 	uart_init();
-	uart_send_string("Hey! This is a testing for value!\r\n");
+	uart_send_string("Kernel Date: 09/09/20.\r\n");
 	
 	while (1) {
-		//uart_send(uart_recv());
 		init_terminal();
 	}
 }

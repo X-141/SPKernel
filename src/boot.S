@@ -8,6 +8,7 @@ _start:
 	and	x0, x0,#0xFF		// Check processor id
 	cbz	x0, proc_0_start	
 	//!! Uncomment the code below to execute 
+	//!! multiple processors
 	//cmp	x0, #0x1
 	//beq proc_1_start
 	//cmp x0, #0x2
