@@ -1,5 +1,6 @@
 *.out
 build/
 kernel8.img
+kernel8.objdump
 tags
 tags_sorted_by_file
