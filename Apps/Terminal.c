@@ -14,19 +14,13 @@ void init_terminal() {
     init_input_buffer(&buff);
 
     enum terminal_status state = cNormal;
-    //char debugvalue[10];
-    //uint_to_string(debugvalue, (unsigned int)'\n', 10);
-    //uart_send_string(debugvalue);
-	//char debugvalue_1[10];
-    //uint_to_string(debugvalue_1, (unsigned int)'\r', 10);
-    //uart_send_string(debugvalue_1);
 
     uart_send_string("> ");
     while(state == cNormal) {
-        state = _append_to_buffer(&buff, uart_recv());
+        char recv_val = uart_recv();
+        state = _append_to_buffer(&buff, recv_val);
         state = _check_buffer(&buff);
     }
-
     init_input_buffer(&buff);
 }
 
@@ -36,10 +30,8 @@ _append_to_buffer(struct input_buffer* buffer, char value) {
     if(buffer->_buffer_size + 3 == MAX_INPUT_BUFFER)
         init_input_buffer(buffer);
     buffer->_buffer[buffer->_buffer_size++] = value;
+    // echo value back.
     uart_send(value);
-    // char debugvalue[10];
-    // UintToString((int)value, debugvalue);
-    // uart_send_string(debugvalue);
     return cNormal;
 }
 
@@ -49,9 +41,7 @@ _check_buffer(struct input_buffer* buffer) {
     // \r == 13
     // backspace is 127
     // When we hit the enter key three values are entered 13 13 10
-    if(buffer->_buffer[buffer->_buffer_size-1] == '\n' ||
-        buffer->_buffer[buffer->_buffer_size-1] == '\r') {
-        _append_to_buffer(buffer, '\r');
+    if(buffer->_buffer[buffer->_buffer_size-1] == '\r') {
         _append_to_buffer(buffer, '\n');
         _append_to_buffer(buffer, '\0');
         uart_send_string(buffer->_buffer);
