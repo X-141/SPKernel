@@ -5,7 +5,8 @@ ASMOPS = -Iinclude
 
 BUILD_DIR = build
 SRC_DIR = src
-APP_DIR = src/Apps
+APP_DIR = Apps
+DRIVER_DIR = Drivers
 
 all : kernel8.img
 
@@ -13,6 +14,10 @@ clean :
 	rm -rf $(BUILD_DIR) *.img 
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
+	mkdir -p $(@D)
+	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
+
+$(BUILD_DIR)/%_c.o: $(DRIVER_DIR)/%.c
 	mkdir -p $(@D)
 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
@@ -26,10 +31,13 @@ $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 CAPPS_FILES = $(wildcard $(APP_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
+DRIVER_FILES = $(wildcard $(DRIVER_DIR)/*.c)
 
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(CAPPS_FILES:$(APP_DIR)/%.c=$(BUILD_DIR)/%_c.o)
+OBJ_FILES += $(DRIVER_FILES:$(DRIVER_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
+
 
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
