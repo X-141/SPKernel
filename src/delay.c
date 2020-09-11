@@ -23,6 +23,8 @@
  *
  */
 
+// Modified by Sean Phillips
+
 #include "peripherals/base.h"
 
 #define SYSTMR_LO        ((volatile unsigned int*)(PBASE+0x00003004))
@@ -36,9 +38,9 @@ void wait_cycles(unsigned int n)
     if(n) while(n--) { asm volatile("nop"); }
 }
 
-/**
- * Wait N microsec (ARM CPU only)
- */
+// /**
+//  * Wait N microsec (ARM CPU only)
+//  */
 void wait_msec(unsigned int n)
 {
     register unsigned long f, t, r;
@@ -48,7 +50,9 @@ void wait_msec(unsigned int n)
     asm volatile ("mrs %0, cntpct_el0" : "=r"(t));
     // calculate expire value for counter
     t+=((f/1000)*n)/1000;
-    do{asm volatile ("mrs %0, cntpct_el0" : "=r"(r));}while(r<t);
+    do{
+        asm volatile ("mrs %0, cntpct_el0" : "=r"(r));
+    }while(r<t);
 }
 
 /**

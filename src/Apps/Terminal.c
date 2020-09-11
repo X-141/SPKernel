@@ -1,29 +1,7 @@
 #include "Terminal.h"
 #include "mini_uart.h"
 
-unsigned int Pow(unsigned int aNum, unsigned int aPow) {
-	unsigned int accumulator = aNum;
-	for(unsigned int i = 1; i < aPow; i++)
-		accumulator *= aNum;
-	return accumulator;
-}
-
-void UintToString(unsigned int aNum, char* aEmptyString) {
-	unsigned int loopNum = aNum;
-	unsigned int numLength = 0;
-	while((loopNum % Pow(10, numLength)) != aNum) 
-		numLength++;
-	
-	for(int x = numLength-1; x >= 0 ; x--) {
-		unsigned int division = (unsigned int)loopNum / 10;
-		unsigned int remainder = loopNum % 10;
-		aEmptyString[x] = (char)(remainder + 0x30);
-		loopNum = division;
-	}
-	aEmptyString[numLength++] = '\n';
-	aEmptyString[numLength++] = '\r';
-	aEmptyString[numLength++] = '\0';
-}
+#include "string.h"
 
 void init_input_buffer(struct input_buffer* buffer) {
     for(int x = 0; x < MAX_INPUT_BUFFER; x++)
@@ -36,12 +14,12 @@ void init_terminal() {
     init_input_buffer(&buff);
 
     enum terminal_status state = cNormal;
-    // char debugvalue[10];
-    // UintToString((int)'\n', debugvalue);
-    // uart_send_string(debugvalue);
-	// char debugvalue_1[10];
-    // UintToString((int)'\r', debugvalue_1);
-    // uart_send_string(debugvalue_1);
+    char debugvalue[10];
+    uint_to_string(debugvalue, (unsigned int)'\n', 10);
+    uart_send_string(debugvalue);
+	char debugvalue_1[10];
+    uint_to_string(debugvalue_1, (unsigned int)'\r', 10);
+    uart_send_string(debugvalue_1);
 
     uart_send_string("> ");
     while(state == cNormal) {
