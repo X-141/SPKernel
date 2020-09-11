@@ -3,9 +3,7 @@
 #include "delay.h"
 
 #include "sd.h"
-
-//#include "Apps/Terminal.h"
-extern unsigned char bss_end;
+#include "fat.h"
 
 void kernel_main(void)
 {
@@ -16,12 +14,14 @@ void kernel_main(void)
 	//wait_msec(5000000);
 	//uart_send_string("After 5 second delay\r\n");
 	
-	    // initialize EMMC and detect SD card type
+	// initialize EMMC and detect SD card type
     if(sd_init()==SD_OK) {
         // read the master boot record after our bss segment
-        if(sd_readblock(0,&bss_end,1)) {
-            // dump it to serial console
-            uart_dump(&bss_end);
+        if(fat_getpartition()) {
+            // list root directory entries
+            fat_listdirectory();
+        } else {
+            uart_send_string("FAT partition not found???\r\n");
         }
     }
 
