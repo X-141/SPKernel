@@ -9,4 +9,7 @@ void uart_send_string(char* str);
 // Source raspi3-tutorial uart.c
 void uart_hex(unsigned int d);
 
+// Source raspi3-tutorial uart.c
+void uart_dump(void *ptr);
+
 #endif  /*_MINI_UART_H */

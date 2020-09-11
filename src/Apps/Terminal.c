@@ -14,12 +14,12 @@ void init_terminal() {
     init_input_buffer(&buff);
 
     enum terminal_status state = cNormal;
-    char debugvalue[10];
-    uint_to_string(debugvalue, (unsigned int)'\n', 10);
-    uart_send_string(debugvalue);
-	char debugvalue_1[10];
-    uint_to_string(debugvalue_1, (unsigned int)'\r', 10);
-    uart_send_string(debugvalue_1);
+    //char debugvalue[10];
+    //uint_to_string(debugvalue, (unsigned int)'\n', 10);
+    //uart_send_string(debugvalue);
+	//char debugvalue_1[10];
+    //uint_to_string(debugvalue_1, (unsigned int)'\r', 10);
+    //uart_send_string(debugvalue_1);
 
     uart_send_string("> ");
     while(state == cNormal) {

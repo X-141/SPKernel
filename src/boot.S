@@ -28,6 +28,7 @@ proc_0_start:
 	mov w1, 0x80000000
 	str w1, [x0, #(LOCAL_PRESCALER - LOCAL_CONTROL)]
 
+	/* Set System clock frequency to 19.2MHz */
 	mov  x0, #0xf800
 	movk x0, #0x124, lsl 16
 	msr cntfrq_el0, x0

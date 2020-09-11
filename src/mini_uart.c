@@ -60,7 +60,7 @@ void uart_init ( void )
 	put32(AUX_MU_CNTL_REG,3);               //Finally, enable transmitter and receiver
 }
 
-/**
+/** raspi3-tutorial/05_uart0/uart.c
  * Display a binary value in hexadecimal
  */
 void uart_hex(unsigned int d) {
@@ -72,5 +72,31 @@ void uart_hex(unsigned int d) {
         // 0-9 => '0'-'9', 10-15 => 'A'-'F'
         n+=n>9?0x37:0x30;
         uart_send(n);
+    }
+}
+
+/** modified
+ * Dump memory
+ */
+void uart_dump(void *ptr)
+{
+    unsigned long a,b,d;
+    unsigned char c;
+    for(a=(unsigned long)ptr;a<(unsigned long)ptr+512;a+=16) {
+        uart_hex(a); uart_send_string(": ");
+        for(b=0;b<16;b++) {
+            c=*((unsigned char*)(a+b));
+            d=(unsigned int)c;d>>=4;d&=0xF;d+=d>9?0x37:0x30;uart_send(d);
+            d=(unsigned int)c;d&=0xF;d+=d>9?0x37:0x30;uart_send(d);
+            uart_send(' ');
+            if(b%4==3)
+                uart_send(' ');
+        }
+        for(b=0;b<16;b++) {
+            c=*((unsigned char*)(a+b));
+            uart_send(c<32||c>=127?'.':c);
+        }
+        uart_send('\r');
+        uart_send('\n');
     }
 }
