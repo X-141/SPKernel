@@ -29,6 +29,8 @@
 // Modified by Sean Phillips
 
 int fat_getpartition(void);
+unsigned int fat_getcluster(char *fn);
 void fat_listdirectory(void);
+char *fat_readfile(unsigned int cluster);
 
 #endif

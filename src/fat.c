@@ -28,6 +28,13 @@
 #include "sd.h"
 #include "mini_uart.h"
 
+int memcmp(void *s1, void *s2, int n)
+{
+    unsigned char *a=s1,*b=s2;
+    while(n-->0){ if(*a!=*b) { return *a-*b; } a++; b++; }
+    return 0;
+}
+
 extern unsigned char bss_end;
 
 static unsigned int partitionlba = 0;
@@ -120,6 +127,47 @@ int fat_getpartition(void)
 }
 
 /**
+ * Find a file in root directory entries
+ */
+unsigned int fat_getcluster(char *fn)
+{
+    bpb_t *bpb=(bpb_t*)&bss_end;
+    fatdir_t *dir=(fatdir_t*)(&bss_end+512);
+    unsigned int root_sec, s;
+    // find the root directory's LBA
+    root_sec=((bpb->spf16?bpb->spf16:bpb->spf32)*bpb->nf)+bpb->rsc;
+    s = (bpb->nr0 + (bpb->nr1 << 8)) * sizeof(fatdir_t);
+    if(bpb->spf16==0) {
+        // adjust for FAT32
+        root_sec+=(bpb->rc-2)*bpb->spc;
+    }
+    // add partition LBA
+    root_sec+=partitionlba;
+    // load the root directory
+    if(sd_readblock(root_sec,(unsigned char*)dir,s/512+1)) {
+        // iterate on each entry and check if it's the one we're looking for
+        for(;dir->name[0]!=0;dir++) {
+            // is it a valid entry?
+            if(dir->name[0]==0xE5 || dir->attr[0]==0xF) continue;
+            // filename match?
+            if(!memcmp(dir->name,fn,11)) {
+                uart_send_string("FAT File ");
+                uart_send_string(fn);
+                uart_send_string(" starts at cluster: ");
+                uart_hex(((unsigned int)dir->ch)<<16|dir->cl);
+                uart_send_string("\r\n");
+                // if so, return starting cluster
+                return ((unsigned int)dir->ch)<<16|dir->cl;
+            }
+        }
+        uart_send_string("ERROR: file not found\r\n");
+    } else {
+        uart_send_string("ERROR: Unable to load root directory\r\n");
+    }
+    return 0;
+}
+
+/**
  * List root directory entries in a FAT file system
  */
 void fat_listdirectory(void)
@@ -171,4 +219,56 @@ void fat_listdirectory(void)
     } else {
         uart_send_string("ERROR: Unable to load root directory\r\n");
     }
+}
+
+/**
+ * Read a file into memory
+ */
+char *fat_readfile(unsigned int cluster)
+{
+    // BIOS Parameter Block
+    bpb_t *bpb=(bpb_t*)&bss_end;
+    // File allocation tables. We choose between FAT16 and FAT32 dynamically
+    unsigned int *fat32=(unsigned int*)(&bss_end+bpb->rsc*512);
+    unsigned short *fat16=(unsigned short*)fat32;
+    // Data pointers
+    unsigned int data_sec, s;
+    unsigned char *data, *ptr;
+    // find the LBA of the first data sector
+    data_sec=((bpb->spf16?bpb->spf16:bpb->spf32)*bpb->nf)+bpb->rsc;
+    s = (bpb->nr0 + (bpb->nr1 << 8)) * sizeof(fatdir_t);
+    if(bpb->spf16>0) {
+        // adjust for FAT16
+        data_sec+=(s+511)>>9;
+    }
+    // add partition LBA
+    data_sec+=partitionlba;
+    // dump important properties
+    uart_send_string("FAT Bytes per Sector: ");
+    uart_hex(bpb->bps0 + (bpb->bps1 << 8));
+    uart_send_string("\nFAT Sectors per Cluster: ");
+    uart_hex(bpb->spc);
+    uart_send_string("\nFAT Number of FAT: ");
+    uart_hex(bpb->nf);
+    uart_send_string("\nFAT Sectors per FAT: ");
+    uart_hex((bpb->spf16?bpb->spf16:bpb->spf32));
+    uart_send_string("\nFAT Reserved Sectors Count: ");
+    uart_hex(bpb->rsc);
+    uart_send_string("\nFAT First data sector: ");
+    uart_hex(data_sec);
+    uart_send_string("\r\n");
+    // load FAT table
+    s=sd_readblock(partitionlba+1,(unsigned char*)&bss_end+512,(bpb->spf16?bpb->spf16:bpb->spf32)+bpb->rsc);
+    // end of FAT in memory
+    data=ptr=&bss_end+512+s;
+    // iterate on cluster chain
+    while(cluster>1 && cluster<0xFFF8) {
+        // load all sectors in a cluster
+        sd_readblock((cluster-2)*bpb->spc+data_sec,ptr,bpb->spc);
+        // move pointer, sector per cluster * bytes per sector
+        ptr+=bpb->spc*(bpb->bps0 + (bpb->bps1 << 8));
+        // get the next cluster in chain
+        cluster=bpb->spf16>0?fat16[cluster]:fat32[cluster];
+    }
+    return (char*)data;
 }
