@@ -111,7 +111,9 @@ MU_TEST(s1_normalstring_s2_normalstring_3) {
     mu_assert(val == 0, "Value should be zero.");
 }
 
-
+/*
+ * Test cases to check functionality of string comparator.
+ */
 MU_TEST_SUITE(strcmp_test_suite) {
     MU_RUN_TEST(s1_null_s2_null);
     MU_RUN_TEST(s1_singlechar_s2_singlechar);
@@ -131,6 +133,7 @@ MU_TEST_SUITE(strcmp_test_suite) {
 
 /* 
  * Convert 0 to ascii string and store it within given char array.
+ * EO: String will contain only a single character '0'.
  */ 
 MU_TEST(zero_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
@@ -140,6 +143,10 @@ MU_TEST(zero_to_string) {
     mu_assert(val == 0, "String should contain only 0");
 }
 
+/* 
+ * Convert 1 to ascii string and store it within given char array.
+ * EO: String will contain only a single character '1'.
+ */ 
 MU_TEST(one_int_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
@@ -148,6 +155,11 @@ MU_TEST(one_int_to_string) {
     mu_assert(val == 0, "String should contain only 1");
 }
 
+/* 
+ * Convert maximum unsigned value to ascii string and store 
+ * it within given char array.
+ * EO: String will contain "4294967295".
+ */ 
 MU_TEST(unsigned_max_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
@@ -156,6 +168,11 @@ MU_TEST(unsigned_max_to_string) {
     mu_assert(val == 0, "String should contain only 4294967295");
 }
 
+/* 
+ * Convert signed integer value to ascii string and store 
+ * it within given char array.
+ * EO: String will contain "4294967295".
+ */ 
 MU_TEST(signed_int_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
@@ -164,6 +181,11 @@ MU_TEST(signed_int_to_string) {
     mu_assert(val == 0, "String should contain only 4294967295");
 }
 
+/* 
+ * Convert a unsigned value of length 5 to ascii string. This ensures
+ * that the reverse step of the algorithm works for odd length numbers.
+ * EO: String should contain "45123"
+ */ 
 MU_TEST(normal_5size_uint_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
@@ -172,6 +194,11 @@ MU_TEST(normal_5size_uint_to_string) {
     mu_assert(val == 0, "String should contain only 45123");
 }
 
+/* 
+ * Convert a unsigned value of length 4 to ascii string. This ensures
+ * that the reverse step of the algorithm works for even length numbers.
+ * EO: String should contain "4523"
+ */ 
 MU_TEST(normal_4size_uint_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
@@ -180,6 +207,11 @@ MU_TEST(normal_4size_uint_to_string) {
     mu_assert(val == 0, "String should contain only 4523");
 }
 
+/* 
+ * Convert a unsigned value that has a number length greater than
+ * what can be held in the string.
+ * EO: Part of the unsigned value stored. In this case: "67295"
+ */ 
 MU_TEST(exceed_size_to_string) {
     int test_size = TEST_CHAR_ARR_LENGTH / 2;
 
@@ -190,6 +222,9 @@ MU_TEST(exceed_size_to_string) {
     mu_assert(val == 0, "String should contain only 67295\n\r");
 }
 
+/* 
+ * Test cases for unsigned integer to string convert.
+ */
 MU_TEST_SUITE(uint_to_string_suite) {
     MU_RUN_TEST(zero_to_string);
     MU_RUN_TEST(one_int_to_string);
