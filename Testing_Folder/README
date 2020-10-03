@@ -1,0 +1,19 @@
+This directory is not directly attached to the kernel project.
+However, this directory contains basic library functions with test cases.
+
+Any needed changes to library functions in the kernel should first make the changes
+here in the testing directory
+
+List of Header Libraries:
+1) string.h
+    int uint_to_string(char* str, unsigned int value, int size);
+        -> Converts given value to ascii string and stores it into str.
+        -> size parameter will limit how much of the converted value can
+        -> be stored in str.
+        -] Return 0 when value can't entirly fit into str.
+        -] Return 1 on success.
+    int strncmp(const char* s1, const char* s2, int size);
+        -> Compare string s1 and s2.
+        -] Return 0 if s1 and s2 are equal.
+        -] Return positive value if character in s1 is greater than s2.
+        -] Return negative value if character in s1 is less than s2.
