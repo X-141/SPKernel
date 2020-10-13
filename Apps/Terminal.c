@@ -35,9 +35,28 @@ _check_buffer(struct input_buffer* buffer) {
         //! That means we need to check the buffer if it matches the
         //! ls command.
         
+        //! Echo out string
         _append_to_buffer(buffer, '\n');
         _append_to_buffer(buffer, '\0');
         uart_send_string(buffer->_buffer);
+
+        //! Place terminating character at the position where starting
+        //! '\r' was located. This is a shorthand way to allow for strcmp
+        //! to not compare special characters.
+        buffer->_buffer[buffer->_buffer_size-3] = '\0';
+        //! Before we actually go about doing performing the test, I want
+        //! to see if it actually works as intended. First lets grab the value
+        //! returned from strcmp.
+        unsigned int compare_value = strcmp(buffer->_buffer, "ls");
+        if (compare_value == 0)
+        {
+            list_directory();
+        }
+        
+        //! char str_compare_value[10];
+        //! uint_to_string(str_compare_value, compare_value, 10);
+        //! uart_send_string(str_compare_value);
+
         _init_input_buffer(buffer);
         uart_send_string("> ");
     }

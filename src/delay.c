@@ -26,6 +26,7 @@
 // Modified by Sean Phillips
 
 #include "peripherals/base.h"
+#include "delay.h"
 
 #define SYSTMR_LO        ((volatile unsigned int*)(PBASE+0x00003004))
 #define SYSTMR_HI        ((volatile unsigned int*)(PBASE+0x00003008))
