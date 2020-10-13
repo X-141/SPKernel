@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
+//! This solution is too slow for large numbers.
 // int test_uint_to_string(char* s, unsigned int value, int size) {
 //         int mod = 1;
 //     while(value / (mod * 10) != 0)
@@ -24,12 +25,16 @@
 
 int test_uint_to_string(char* s, unsigned int value, int size) {
     int index = 0;
-    
+    int fit = 1;
     do {
         s[index++] = (value % 10) + 0x30;
         value /= 10;
-    } while(index < (size-3) && value != 0);
-    
+        if(index == (size-3)) {
+            fit = 0;
+            break;
+        }
+    } while(/*index<(size-3)&&*/value != 0);
+
     // Pad last three spaces of the string with terminal 
     // characters
     s[index]    = '\n';
@@ -47,6 +52,7 @@ int test_uint_to_string(char* s, unsigned int value, int size) {
         reverse_index++;
         index--;
     }
+    return fit;
 }
 
 int test_strcmp(const char* s1, const char* s2) {

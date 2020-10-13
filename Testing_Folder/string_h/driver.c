@@ -138,9 +138,10 @@ MU_TEST_SUITE(strcmp_test_suite) {
 MU_TEST(zero_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, 0, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, 0, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "0\n\r");
     mu_assert(val == 0, "String should contain only 0");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -150,9 +151,10 @@ MU_TEST(zero_to_string) {
 MU_TEST(one_int_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, 1, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, 1, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "1\n\r");
     mu_assert(val == 0, "String should contain only 1");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -163,9 +165,10 @@ MU_TEST(one_int_to_string) {
 MU_TEST(unsigned_max_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, 0xFFFFFFFF, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, 0xFFFFFFFF, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "4294967295\n\r");
     mu_assert(val == 0, "String should contain only 4294967295");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -176,9 +179,10 @@ MU_TEST(unsigned_max_to_string) {
 MU_TEST(signed_int_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, -1, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, -1, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "4294967295\n\r");
     mu_assert(val == 0, "String should contain only 4294967295");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -189,9 +193,10 @@ MU_TEST(signed_int_to_string) {
 MU_TEST(normal_5size_uint_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, 45123, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, 45123, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "45123\n\r");
     mu_assert(val == 0, "String should contain only 45123");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -202,9 +207,10 @@ MU_TEST(normal_5size_uint_to_string) {
 MU_TEST(normal_4size_uint_to_string) {
     char string[TEST_CHAR_ARR_LENGTH];
     zero_str(string, TEST_CHAR_ARR_LENGTH);
-    test_uint_to_string(string, 4523, TEST_CHAR_ARR_LENGTH);
+    int fit = test_uint_to_string(string, 4523, TEST_CHAR_ARR_LENGTH);
     int val = test_strcmp(string, "4523\n\r");
     mu_assert(val == 0, "String should contain only 4523");
+    mu_assert(fit == 1, "String should fit in given string.");
 }
 
 /* 
@@ -217,9 +223,10 @@ MU_TEST(exceed_size_to_string) {
 
     char string[test_size];
     zero_str(string, test_size);
-    test_uint_to_string(string, 0xFFFFFFFF, test_size);
+    int fit = test_uint_to_string(string, 0xFFFFFFFF, test_size);
     int val = test_strcmp(string, "67295\n\r");
     mu_assert(val == 0, "String should contain only 67295\n\r");
+    mu_assert(fit == 0, "String should not have fit in given string.");
 }
 
 /* 
