@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "delay.h"
 #include "peripherals/mini_uart.h"
 #include "peripherals/gpio.h"
 
@@ -44,9 +45,9 @@ void uart_init ( void )
 	// of pins 14 and 15. See page 101 of BCM2837 manual for details.
 	// 00 -> Off ; 01 -> Pull Down ; 
 	put32(GPPUD,0);
-	delay(150);
+	wait_cycles(150);
 	put32(GPPUDCLK0,(1<<14)|(1<<15));
-	delay(150);
+	wait_cycles(150);
 	//! this flushes GPIO setup
 	put32(GPPUDCLK0,0);
 
