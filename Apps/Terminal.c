@@ -3,6 +3,9 @@
 
 #include "string.h"
 
+//! include dummy app
+#include "ls.h"
+
 // \n == 10
 // \r == 13
 // backspace is 127
@@ -28,6 +31,10 @@ _append_to_buffer(struct input_buffer* buffer, char value) {
 enum terminal_status 
 _check_buffer(struct input_buffer* buffer) {
     if(buffer->_buffer[buffer->_buffer_size-1] == '\r') {
+        //! Here the user selected the enter key...
+        //! That means we need to check the buffer if it matches the
+        //! ls command.
+        
         _append_to_buffer(buffer, '\n');
         _append_to_buffer(buffer, '\0');
         uart_send_string(buffer->_buffer);
