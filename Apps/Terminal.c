@@ -47,11 +47,11 @@ _check_buffer(struct input_buffer* buffer) {
         //! Before we actually go about doing performing the test, I want
         //! to see if it actually works as intended. First lets grab the value
         //! returned from strcmp.
-        unsigned int compare_value = strcmp(buffer->_buffer, "ls");
-        if (compare_value == 0)
-        {
-            list_directory();
-        }
+        //unsigned int compare_value = strcmp(buffer->_buffer, "ls");
+        //if (compare_value == 0)
+        //{
+        //    list_directory();
+        //}
         
         //! char str_compare_value[10];
         //! uint_to_string(str_compare_value, compare_value, 10);

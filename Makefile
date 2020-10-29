@@ -14,15 +14,15 @@ clean :
 	rm -rf $(BUILD_DIR) *.img 
 
 $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
-	mkdir -p $(@D)
+	@ mkdir -p $(@D)
 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
 $(BUILD_DIR)/%_c.o: $(DRIVER_DIR)/%.c
-	mkdir -p $(@D)
+	@ mkdir -p $(@D)
 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
 $(BUILD_DIR)/%_c.o: $(APP_DIR)/%.c
-	mkdir -p $(@D)
+	@ mkdir -p $(@D)
 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S

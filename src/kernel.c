@@ -11,10 +11,11 @@ void kernel_main(void)
 {
     unsigned int cluster;
 	uart_init();
+    uart_send_string("Initalized UART.");
     sd_init();
-	uart_send_string("Kernel Date: 09/28/20.\r\n");
+	uart_send_string("Kernel Date: 10/29/20.\r\n");
 
-    // // initialize EMMC and detect SD card type
+    // initialize EMMC and detect SD card type
     if(sd_init()==SD_OK) {
         // read the master boot record and find our partition
         if(fat_getpartition()) {
