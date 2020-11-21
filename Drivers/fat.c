@@ -84,8 +84,8 @@ typedef struct {
  */
 int fat_getpartition(void)
 {
-    unsigned char *mbr=&bss_end;
-    bpb_t *bpb=(bpb_t*)&bss_end;
+    unsigned char *mbr = &bss_end;
+    bpb_t *bpb = (bpb_t*) &bss_end;
     // read the partitioning table
     if(sd_readblock(0,&bss_end,1)) {
         // check magic

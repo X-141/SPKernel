@@ -31,22 +31,71 @@
 #include "mini_uart.h"
 #include "peripherals/base.h"
 
+// Reference page 66 in BCM2835 pdf
+//! as a note the document: SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
+//! is not publically available? according to source:
+//! https://www.raspberrypi.org/forums/viewtopic.php?t=7638
+
+// Contains the argument for the SD card specific command ACMD23.
 #define EMMC_ARG2           ((volatile unsigned int*)(PBASE+0x00300000))
+// Contains the number and size in bytes for data blocks to be transferred.
+//! Maximum size of block is 1024 bytes
 #define EMMC_BLKSIZECNT     ((volatile unsigned int*)(PBASE+0x00300004))
+// Contains the arguments for all commands except for the SD card specific
+// command ACMD23. Must be set before command is issued to CMDTM register.
 #define EMMC_ARG1           ((volatile unsigned int*)(PBASE+0x00300008))
+// This register is used to issue commands to the card. It also contains flag
+// information informing the EMMC module what card response and type of data
+// transfer to expect.
 #define EMMC_CMDTM          ((volatile unsigned int*)(PBASE+0x0030000C))
+// Register contains the status bits of the SD card s response.
+//! In case of commands CMD2 and CMD10 it contains CID[31:0].
+//! In case of command CMD9 it contains CSD[31:0].
+// Note: the register is only valid once the last command has completed.
 #define EMMC_RESP0          ((volatile unsigned int*)(PBASE+0x00300010))
+//! In case of commands CMD2 and CMD10 this register contains CID[63:32].
+//! In case of commands CMD9 this register contains CSD[63:32].
 #define EMMC_RESP1          ((volatile unsigned int*)(PBASE+0x00300014))
+//! In case of commands CMD2 and CMD10 this register contains CID[95:64].
+//! In case of commands CMD9 this register contains CSD[95:64].
 #define EMMC_RESP2          ((volatile unsigned int*)(PBASE+0x00300018))
+//! In case of commands CMD2 and CMD10 this register contains CID[127:96].
+//! In case of commands CMD9 this register contains CSD[127:96].
 #define EMMC_RESP3          ((volatile unsigned int*)(PBASE+0x0030001C))
+// This register is used to transfer data to/from the card.
+//! Bit 1 of the interrupt register can be used to check if data is available.
 #define EMMC_DATA           ((volatile unsigned int*)(PBASE+0x00300020))
+// This register contains information intended for debugging. Its values change
+// automatically according to the hardware.
+//! It is not recommended to use this register for polling. Instead use the
+//! INTERRUPT register which implements a handshake mechanism.
 #define EMMC_STATUS         ((volatile unsigned int*)(PBASE+0x00300024))
+// This register is used to configure the EMMC module.
+//! Refer to Arasan documentation for more details: 
+//! SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
 #define EMMC_CONTROL0       ((volatile unsigned int*)(PBASE+0x00300028))
+// This register is used to configure the EMMC module.
 #define EMMC_CONTROL1       ((volatile unsigned int*)(PBASE+0x0030002C))
+// This register holds the interrupt flags. Each flag can be disabled
+// using the according bit in the IRPT_MASK register.
 #define EMMC_INTERRUPT      ((volatile unsigned int*)(PBASE+0x00300030))
+// The IRPT_MASK register used to mask the interrupt falgs.
+//! Refer to Arasan documentation for more details:
+//! SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
 #define EMMC_INT_MASK       ((volatile unsigned int*)(PBASE+0x00300034))
+// This register enables different interrupts in the INTERRUPT register to
+// generate an interrupt on the int_to_arm output.
+//! Refer to Arasan documentation for more details:
+//! SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
 #define EMMC_INT_EN         ((volatile unsigned int*)(PBASE+0x00300038))
+// This register enables different interrupts in the INTERRUPT register to
+// generate an interrupt on the int_to_arm output.
+//! Refer to Arasan documentation for more details:
+//! SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
 #define EMMC_CONTROL2       ((volatile unsigned int*)(PBASE+0x0030003C))
+// This register contains the version information and slot interrupt status.
+//! Refer to Arasan documentation for more details:
+//! SD3.0_Host_AHB_eMMC4.4_Usersguide_ver5.9_jan11_10.pdf
 #define EMMC_SLOTISR_VER    ((volatile unsigned int*)(PBASE+0x003000FC))
 
 // command flags
@@ -181,11 +230,23 @@ int sd_cmd(unsigned int code, unsigned int arg)
  */
 int sd_readblock(unsigned int lba, unsigned char *buffer, unsigned int num)
 {
-    int r,c=0,d;
-    if(num<1) num=1;
-    uart_send_string("sd_readblock lba ");uart_hex(lba);uart_send_string(" num ");uart_hex(num);uart_send_string("\r\n");
-    if(sd_status(SR_DAT_INHIBIT)) {sd_err=SD_TIMEOUT; return 0;}
-    unsigned int *buf=(unsigned int *)buffer;
+    int r, c = 0 ,d;
+
+    if(num<1) 
+        num = 1;
+
+    uart_send_string("sd_readblock lba ");
+    uart_hex(lba);
+    uart_send_string(" num ");
+    uart_hex(num);
+    uart_send_string("\r\n");
+
+    if(sd_status(SR_DAT_INHIBIT)) {
+        sd_err = SD_TIMEOUT; 
+        return 0;
+    }
+    
+    unsigned int *buf = (unsigned int *) buffer;
     if(sd_scr[0] & SCR_SUPP_CCS) {
         if(num > 1 && (sd_scr[0] & SCR_SUPP_SET_BLKCNT)) {
             sd_cmd(CMD_SET_BLOCKCNT,num);
@@ -264,27 +325,52 @@ int sd_clk(unsigned int f)
  */
 int sd_init()
 {
-    long r,cnt,ccs=0;
+    long r, cnt, ccs = 0;
     // GPIO_CD
-    r=*GPFSEL4; r&=~(7<<(7*3)); *GPFSEL4=r;
-    *GPPUD=2; wait_cycles(150); *GPPUDCLK1=(1<<15); wait_cycles(150); *GPPUD=0; *GPPUDCLK1=0;
-    r=*GPHEN1; r|=1<<15; *GPHEN1=r;
+    r = *GPFSEL4; 
+    r &= ~(7<<(7*3));
+    *GPFSEL4 = r;
+    *GPPUD = 2; 
+    wait_cycles(150); 
+    *GPPUDCLK1 = (1<<15); 
+    wait_cycles(150); 
+    *GPPUD = 0; 
+    *GPPUDCLK1 = 0;
+    r=*GPHEN1; 
+    r |= 1<<15;
+    *GPHEN1 = r;
 
     // GPIO_CLK, GPIO_CMD
-    r=*GPFSEL4; r|=(7<<(8*3))|(7<<(9*3)); *GPFSEL4=r;
-    *GPPUD=2; wait_cycles(150); *GPPUDCLK1=(1<<16)|(1<<17); wait_cycles(150); *GPPUD=0; *GPPUDCLK1=0;
+    r = *GPFSEL4; 
+    r |= (7<<(8*3)) | (7<<(9*3)); 
+    *GPFSEL4=r;
+    *GPPUD=2; 
+    wait_cycles(150); 
+    *GPPUDCLK1 = (1<<16)|(1<<17); 
+    wait_cycles(150); 
+    *GPPUD = 0; 
+    *GPPUDCLK1 = 0;
 
     // GPIO_DAT0, GPIO_DAT1, GPIO_DAT2, GPIO_DAT3
-    r=*GPFSEL5; r|=(7<<(0*3)) | (7<<(1*3)) | (7<<(2*3)) | (7<<(3*3)); *GPFSEL5=r;
-    *GPPUD=2; wait_cycles(150);
+    r = *GPFSEL5; 
+    r |= (7<<(0*3)) | (7<<(1*3)) | (7<<(2*3)) | (7<<(3*3));
+    *GPFSEL5 = r;
+    *GPPUD = 2; 
+    wait_cycles(150);
     *GPPUDCLK1=(1<<18) | (1<<19) | (1<<20) | (1<<21);
-    wait_cycles(150); *GPPUD=0; *GPPUDCLK1=0;
+    wait_cycles(150); 
+    *GPPUD=0; 
+    *GPPUDCLK1=0;
 
     sd_hv = (*EMMC_SLOTISR_VER & HOST_SPEC_NUM) >> HOST_SPEC_NUM_SHIFT;
     uart_send_string("EMMC: GPIO set up\r\n");
     // Reset the card.
-    *EMMC_CONTROL0 = 0; *EMMC_CONTROL1 |= C1_SRST_HC;
-    cnt=10000; do{wait_msec(10);} while( (*EMMC_CONTROL1 & C1_SRST_HC) && cnt-- );
+    *EMMC_CONTROL0 = 0; 
+    *EMMC_CONTROL1 |= C1_SRST_HC;
+    cnt=10000; 
+    do{
+        wait_msec(10);
+    } while( (*EMMC_CONTROL1 & C1_SRST_HC) && cnt-- );
     if(cnt<=0) {
         uart_send_string("ERROR: failed to reset EMMC\r\n");
         return SD_ERROR;
@@ -293,36 +379,47 @@ int sd_init()
     *EMMC_CONTROL1 |= C1_CLK_INTLEN | C1_TOUNIT_MAX;
     wait_msec(10);
     // Set clock to setup frequency.
-    if((r=sd_clk(400000))) return r;
-    *EMMC_INT_EN   = 0xffffffff;
+    if((r=sd_clk(400000))) 
+        return r;
+    *EMMC_INT_EN = 0xffffffff;
     *EMMC_INT_MASK = 0xffffffff;
     sd_scr[0]=sd_scr[1]=sd_rca=sd_err=0;
+    
     sd_cmd(CMD_GO_IDLE,0);
-    if(sd_err) return sd_err;
+    
+    if(sd_err) 
+        return sd_err;
 
     sd_cmd(CMD_SEND_IF_COND,0x000001AA);
-    if(sd_err) return sd_err;
-    cnt=6; r=0; while(!(r&ACMD41_CMD_COMPLETE) && cnt--) {
+    
+    if(sd_err) 
+        return sd_err;
+    cnt = 6; 
+    r = 0; 
+    while(!(r&ACMD41_CMD_COMPLETE) && cnt--) {
         wait_cycles(400);
-        r=sd_cmd(CMD_SEND_OP_COND,ACMD41_ARG_HC);
+        r = sd_cmd(CMD_SEND_OP_COND,ACMD41_ARG_HC);
         uart_send_string("EMMC: CMD_SEND_OP_COND returned ");
-        if(r&ACMD41_CMD_COMPLETE)
+        if(r & ACMD41_CMD_COMPLETE)
             uart_send_string("COMPLETE ");
-        if(r&ACMD41_VOLTAGE)
+        if(r & ACMD41_VOLTAGE)
             uart_send_string("VOLTAGE ");
-        if(r&ACMD41_CMD_CCS)
+        if(r & ACMD41_CMD_CCS)
             uart_send_string("CCS ");
         uart_hex(r>>32);
         uart_hex(r);
         uart_send_string("\r\n");
-        if(sd_err!=SD_TIMEOUT && sd_err!=SD_OK ) {
+        if(sd_err != SD_TIMEOUT && sd_err != SD_OK ) {
             uart_send_string("ERROR: EMMC ACMD41 returned error\r\n");
             return sd_err;
         }
     }
-    if(!(r&ACMD41_CMD_COMPLETE) || !cnt ) return SD_TIMEOUT;
-    if(!(r&ACMD41_VOLTAGE)) return SD_ERROR;
-    if(r&ACMD41_CMD_CCS) ccs=SCR_SUPP_CCS;
+    if(!(r & ACMD41_CMD_COMPLETE) || !cnt ) 
+        return SD_TIMEOUT;
+    if(!(r & ACMD41_VOLTAGE)) 
+        return SD_ERROR;
+    if(r&ACMD41_CMD_CCS) 
+        ccs=SCR_SUPP_CCS;
 
     sd_cmd(CMD_ALL_SEND_CID,0);
 
@@ -331,18 +428,24 @@ int sd_init()
     uart_hex(sd_rca>>32);
     uart_hex(sd_rca);
     uart_send_string("\n");
-    if(sd_err) return sd_err;
+    if(sd_err) 
+        return sd_err;
 
-    if((r=sd_clk(25000000))) return r;
+    if((r=sd_clk(25000000))) 
+        return r;
 
     sd_cmd(CMD_CARD_SELECT,sd_rca);
-    if(sd_err) return sd_err;
+    if(sd_err) 
+        return sd_err;
 
-    if(sd_status(SR_DAT_INHIBIT)) return SD_TIMEOUT;
+    if(sd_status(SR_DAT_INHIBIT)) 
+        return SD_TIMEOUT;
     *EMMC_BLKSIZECNT = (1<<16) | 8;
     sd_cmd(CMD_SEND_SCR,0);
-    if(sd_err) return sd_err;
-    if(sd_int(INT_READ_RDY)) return SD_TIMEOUT;
+    if(sd_err) 
+        return sd_err;
+    if(sd_int(INT_READ_RDY)) 
+        return SD_TIMEOUT;
 
     r=0; cnt=100000; while(r<2 && cnt) {
         if( *EMMC_STATUS & SR_READ_AVAILABLE )
@@ -350,10 +453,12 @@ int sd_init()
         else
             wait_msec(1);
     }
-    if(r!=2) return SD_TIMEOUT;
+    if(r!=2) 
+        return SD_TIMEOUT;
     if(sd_scr[0] & SCR_SD_BUS_WIDTH_4) {
         sd_cmd(CMD_SET_BUS_WIDTH,sd_rca|2);
-        if(sd_err) return sd_err;
+        if(sd_err) 
+            return sd_err;
         *EMMC_CONTROL0 |= C0_HCTL_DWITDH;
     }
     // add software flag
@@ -363,7 +468,7 @@ int sd_init()
     if(ccs)
         uart_send_string("CCS ");
     uart_send_string("\r\n");
-    sd_scr[0]&=~SCR_SUPP_CCS;
-    sd_scr[0]|=ccs;
+    sd_scr[0] &= ~SCR_SUPP_CCS;
+    sd_scr[0] |= ccs;
     return SD_OK;
 }
