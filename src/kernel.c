@@ -20,17 +20,16 @@ void kernel_main(void)
         // read the master boot record and find our partition
         if(fat_getpartition()) {
             // find out file in root directory entries
-            fat_listdirectory();
-            fat_listdirectory();
-            // cluster = fat_getcluster("LICENC~1BRO");
+            cluster = fat_getcluster("LICENC~1BRO");
 
             // if(cluster == 0)
             //     cluster = fat_getcluster("KERNEL8 IMG");
 
-            // if(cluster) {
-            //     // read into memory
-            //     uart_dump(fat_readfile(cluster));
-            // }
+            if(cluster) {
+                // read into memory
+                fat_readfile(cluster);
+                //uart_dump(fat_readfile(cluster));
+            }
         } else {
             uart_send_string("FAT partition not found???\r\n");
         }
