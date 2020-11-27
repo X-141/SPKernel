@@ -35,9 +35,19 @@ int memcmp(void *s1, void *s2, int n)
     return 0;
 }
 
+int memcpy(void *dest, const void *src, int n) {
+    char* _d = (char *) dest;
+    const char* _s = (const char *) src;
+    for(int x = 0; x < n ; x++)
+        _d[x] = _s[x];
+    return 0;
+}
+
 extern unsigned char bss_end;
 
 static unsigned int partitionlba = 0;
+
+unsigned char MBR[512];
 
 // the BIOS Parameter Block (in Volume Boot Record)
 typedef struct {
@@ -66,6 +76,8 @@ typedef struct {
     char            fst2[8];
 } __attribute__((packed)) bpb_t;
 
+bpb_t BPB;
+
 // directory entry structure
 typedef struct {
     char            name[8];
@@ -82,55 +94,121 @@ typedef struct {
  * so that we know where our FAT file system starts, and
  * read that volume's BIOS Parameter Block
  */
+// int fat_getpartition(void)
+// {
+//     unsigned char *mbr = &bss_end;
+//     bpb_t *bpb = (bpb_t*) &bss_end;
+//     uart_send_string("Dumping before reading from lba 0\r\n");
+//         uart_dump(&bss_end);
+//     // read the partitioning table
+//     if(sd_readblock(0, &bss_end, 1)) {
+//         uart_send_string("Dumping after reading from lba 0\r\n");
+//         uart_dump(&bss_end);
+//         // check magic
+//         if(mbr[510] != 0x55 || mbr[511] != 0xAA) {
+//             uart_send_string("ERROR: Bad magic in MBR\r\n");
+//             return 0;
+//         }
+//         // check partition type
+//         if(mbr[0x1C2]!=0xE/*FAT16 LBA*/ && mbr[0x1C2]!=0xC/*FAT32 LBA*/) {
+//             uart_send_string("ERROR: Wrong partition type\r\n");
+//             return 0;
+//         }
+//         uart_send_string("MBR disk identifier: ");
+//         uart_hex(*((unsigned int*)((unsigned long)&bss_end+0x1B8)));
+//         uart_send_string("\nFAT partition starts at: ");
+//         // should be this, but compiler generates bad code...
+//         //partitionlba=*((unsigned int*)((unsigned long)&_end+0x1C6));
+//         partitionlba = mbr[0x1C6] + (mbr[0x1C7]<<8) + (mbr[0x1C8]<<16) + (mbr[0x1C9]<<24);
+//         uart_hex(partitionlba);
+//         uart_send_string("\r\n");
+//         // read the boot record
+//         if(!sd_readblock(partitionlba, &bss_end, 1)) {
+//             uart_send_string("ERROR: Unable to read boot record\r\n");
+//             return 0;
+//         }
+//         uart_send_string("Dumping after reading from lba: ");
+//         uart_hex(partitionlba);
+//         uart_send_string("\r\n");
+//         uart_dump(&bss_end);
+//         // check file system type. We don't use cluster numbers for that, but magic bytes
+//         if( !(bpb->fst[0]=='F' && bpb->fst[1]=='A' && bpb->fst[2]=='T') &&
+//             !(bpb->fst2[0]=='F' && bpb->fst2[1]=='A' && bpb->fst2[2]=='T')) {
+//             uart_send_string("ERROR: Unknown file system type\r\n");
+//             return 0;
+//         }
+//         uart_send_string("FAT type: ");
+//         // if 16 bit sector per fat is zero, then it's a FAT32
+//         uart_send_string(bpb->spf16>0?"FAT16":"FAT32");
+//         uart_send_string("\r\n");
+//         return 1;
+//     }
+//     return 0;
+// }
+
 int fat_getpartition(void)
 {
-    unsigned char *mbr = &bss_end;
-    bpb_t *bpb = (bpb_t*) &bss_end;
-    
+    unsigned char partition_data[512];
+    //unsigned char *mbr = MBR;
+    //bpb_t *bpb = &BPB;
+
     uart_send_string("Dumping before reading from lba 0\r\n");
-        uart_dump(&bss_end);
+        uart_dump(MBR);
 
     // read the partitioning table
-    if(sd_readblock(0, &bss_end, 1)) {
+    if(sd_readblock(0, partition_data, 1)) {
         uart_send_string("Dumping after reading from lba 0\r\n");
-        uart_dump(&bss_end);
+        uart_dump(partition_data);
+
+        memcpy(MBR, partition_data, 512);
+        
+        uart_send_string("Copied data from local to MBR\r\n");
+        uart_dump(MBR);
+
         // check magic
-        if(mbr[510] != 0x55 || mbr[511] != 0xAA) {
+        if(MBR[510] != 0x55 || MBR[511] != 0xAA) {
             uart_send_string("ERROR: Bad magic in MBR\r\n");
             return 0;
         }
         // check partition type
-        if(mbr[0x1C2]!=0xE/*FAT16 LBA*/ && mbr[0x1C2]!=0xC/*FAT32 LBA*/) {
+        if(MBR[0x1C2]!=0xE/*FAT16 LBA*/ && MBR[0x1C2]!=0xC/*FAT32 LBA*/) {
             uart_send_string("ERROR: Wrong partition type\r\n");
             return 0;
         }
         uart_send_string("MBR disk identifier: ");
-        uart_hex(*((unsigned int*)((unsigned long)&bss_end+0x1B8)));
+        uart_hex(*((unsigned int*)((unsigned long)MBR+0x1B8)));
         uart_send_string("\nFAT partition starts at: ");
-        // should be this, but compiler generates bad code...
-        //partitionlba=*((unsigned int*)((unsigned long)&_end+0x1C6));
-        partitionlba = mbr[0x1C6] + (mbr[0x1C7]<<8) + (mbr[0x1C8]<<16) + (mbr[0x1C9]<<24);
+        // // should be this, but compiler generates bad code...
+        // //partitionlba=*((unsigned int*)((unsigned long)&_end+0x1C6));
+        partitionlba = MBR[0x1C6] + (MBR[0x1C7]<<8) + (MBR[0x1C8]<<16) + (MBR[0x1C9]<<24);
         uart_hex(partitionlba);
         uart_send_string("\r\n");
 
         // read the boot record
-        if(!sd_readblock(partitionlba, &bss_end, 1)) {
+        if(!sd_readblock(partitionlba, partition_data, 1)) {
             uart_send_string("ERROR: Unable to read boot record\r\n");
             return 0;
         }
+
         uart_send_string("Dumping after reading from lba: ");
         uart_hex(partitionlba);
         uart_send_string("\r\n");
-        uart_dump(&bss_end);
+        uart_dump(partition_data);
+
+        memcpy(&BPB, partition_data, sizeof(bpb_t));
+
+        uart_send_string("Copied data from local to BPB\r\n");
+        uart_dump(&BPB);
+
         // check file system type. We don't use cluster numbers for that, but magic bytes
-        if( !(bpb->fst[0]=='F' && bpb->fst[1]=='A' && bpb->fst[2]=='T') &&
-            !(bpb->fst2[0]=='F' && bpb->fst2[1]=='A' && bpb->fst2[2]=='T')) {
+        if( !(BPB.fst[0]=='F' && BPB.fst[1]=='A' && BPB.fst[2]=='T') &&
+            !(BPB.fst2[0]=='F' && BPB.fst2[1]=='A' && BPB.fst2[2]=='T')) {
             uart_send_string("ERROR: Unknown file system type\r\n");
             return 0;
         }
         uart_send_string("FAT type: ");
         // if 16 bit sector per fat is zero, then it's a FAT32
-        uart_send_string(bpb->spf16>0?"FAT16":"FAT32");
+        uart_send_string(BPB.spf16 > 0 ? "FAT16" : "FAT32");
         uart_send_string("\r\n");
         return 1;
     }
