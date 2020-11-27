@@ -86,10 +86,16 @@ int fat_getpartition(void)
 {
     unsigned char *mbr = &bss_end;
     bpb_t *bpb = (bpb_t*) &bss_end;
+    
+    uart_send_string("Dumping before reading from lba 0\r\n");
+        uart_dump(&bss_end);
+
     // read the partitioning table
-    if(sd_readblock(0,&bss_end,1)) {
+    if(sd_readblock(0, &bss_end, 1)) {
+        uart_send_string("Dumping after reading from lba 0\r\n");
+        uart_dump(&bss_end);
         // check magic
-        if(mbr[510]!=0x55 || mbr[511]!=0xAA) {
+        if(mbr[510] != 0x55 || mbr[511] != 0xAA) {
             uart_send_string("ERROR: Bad magic in MBR\r\n");
             return 0;
         }
@@ -103,14 +109,19 @@ int fat_getpartition(void)
         uart_send_string("\nFAT partition starts at: ");
         // should be this, but compiler generates bad code...
         //partitionlba=*((unsigned int*)((unsigned long)&_end+0x1C6));
-        partitionlba=mbr[0x1C6] + (mbr[0x1C7]<<8) + (mbr[0x1C8]<<16) + (mbr[0x1C9]<<24);
+        partitionlba = mbr[0x1C6] + (mbr[0x1C7]<<8) + (mbr[0x1C8]<<16) + (mbr[0x1C9]<<24);
         uart_hex(partitionlba);
         uart_send_string("\r\n");
+
         // read the boot record
-        if(!sd_readblock(partitionlba,&bss_end,1)) {
+        if(!sd_readblock(partitionlba, &bss_end, 1)) {
             uart_send_string("ERROR: Unable to read boot record\r\n");
             return 0;
         }
+        uart_send_string("Dumping after reading from lba: ");
+        uart_hex(partitionlba);
+        uart_send_string("\r\n");
+        uart_dump(&bss_end);
         // check file system type. We don't use cluster numbers for that, but magic bytes
         if( !(bpb->fst[0]=='F' && bpb->fst[1]=='A' && bpb->fst[2]=='T') &&
             !(bpb->fst2[0]=='F' && bpb->fst2[1]=='A' && bpb->fst2[2]=='T')) {
@@ -132,12 +143,13 @@ int fat_getpartition(void)
 unsigned int fat_getcluster(char *fn)
 {
     bpb_t *bpb=(bpb_t*)&bss_end;
-    fatdir_t *dir=(fatdir_t*)(&bss_end+512);
+
+    fatdir_t *dir = (fatdir_t*)(&bss_end+512);
     unsigned int root_sec, s;
     // find the root directory's LBA
-    root_sec=((bpb->spf16?bpb->spf16:bpb->spf32)*bpb->nf)+bpb->rsc;
+    root_sec = ((bpb->spf16 ? bpb->spf16 : bpb->spf32) *bpb->nf) + bpb->rsc;
     s = (bpb->nr0 + (bpb->nr1 << 8)) * sizeof(fatdir_t);
-    if(bpb->spf16==0) {
+    if(bpb->spf16 == 0) {
         // adjust for FAT32
         root_sec+=(bpb->rc-2)*bpb->spc;
     }
@@ -148,9 +160,10 @@ unsigned int fat_getcluster(char *fn)
         // iterate on each entry and check if it's the one we're looking for
         for(;dir->name[0]!=0;dir++) {
             // is it a valid entry?
-            if(dir->name[0]==0xE5 || dir->attr[0]==0xF) continue;
+            if(dir->name[0]==0xE5 || dir->attr[0]==0xF) 
+                continue;
             // filename match?
-            if(!memcmp(dir->name,fn,11)) {
+            if(!memcmp(dir->name, fn, 11)) {
                 uart_send_string("FAT File ");
                 uart_send_string(fn);
                 uart_send_string(" starts at cluster: ");
@@ -172,29 +185,31 @@ unsigned int fat_getcluster(char *fn)
  */
 void fat_listdirectory(void)
 {
-    bpb_t *bpb=(bpb_t*)&bss_end;
-    fatdir_t *dir=(fatdir_t*)&bss_end;
+    bpb_t *bpb = (bpb_t*) &bss_end;
+    fatdir_t *dir = (fatdir_t*) &bss_end;
     unsigned int root_sec, s;
     // find the root directory's LBA
-    root_sec=((bpb->spf16?bpb->spf16:bpb->spf32)*bpb->nf)+bpb->rsc;
+    root_sec = ((bpb->spf16 ? bpb->spf16 : bpb->spf32) * bpb->nf) + bpb->rsc;
     s = (bpb->nr0 + (bpb->nr1 << 8));
     uart_send_string("FAT number of root diretory entries: ");
     uart_hex(s);
     s *= sizeof(fatdir_t);
     if(bpb->spf16==0) {
         // adjust for FAT32
-        root_sec+=(bpb->rc-2)*bpb->spc;
+        root_sec += (bpb->rc-2)*bpb->spc;
     }
+
     // add partition LBA
-    root_sec+=partitionlba;
+    root_sec += partitionlba;
     uart_send_string("\nFAT root directory LBA: ");
     uart_hex(root_sec);
     uart_send_string("\r\n");
+
     // load the root directory
-    if(sd_readblock(root_sec,(unsigned char*)&bss_end,s/512+1)) {
+    if(sd_readblock(root_sec, (unsigned char*)&bss_end, s/512+1)) {
         uart_send_string("\nAttrib Cluster  Size     Name\r\n");
         // iterate on each entry and print out
-        for(;dir->name[0]!=0;dir++) {
+        for(;dir->name[0] != 0;dir++) {
             // is it a valid entry?
             if(dir->name[0]==0xE5 || dir->attr[0]==0xF) continue;
             // decode attributes
