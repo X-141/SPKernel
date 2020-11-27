@@ -43,6 +43,13 @@ int memcpy(void *dest, const void *src, int n) {
     return 0;
 }
 
+int zerodata(void *arr, int n) {
+    char* _a = (char *) arr;
+    for(int x = 0; x < n; x++)
+        _a[x] = 0;
+    return 0;
+}
+
 extern unsigned char bss_end;
 
 static unsigned int partitionlba = 0;
@@ -148,22 +155,20 @@ typedef struct {
 
 int fat_getpartition(void)
 {
-    unsigned char partition_data[512];
-    //unsigned char *mbr = MBR;
-    //bpb_t *bpb = &BPB;
+    unsigned char sd_data[512];
 
-    uart_send_string("Dumping before reading from lba 0\r\n");
-        uart_dump(MBR);
+    // uart_send_string("Dumping before reading from lba 0\r\n");
+    //     uart_dump(MBR);
 
     // read the partitioning table
-    if(sd_readblock(0, partition_data, 1)) {
-        uart_send_string("Dumping after reading from lba 0\r\n");
-        uart_dump(partition_data);
+    if(sd_readblock(0, sd_data, 1)) {
+        // uart_send_string("Dumping after reading from lba 0\r\n");
+        // uart_dump(partition_data);
 
-        memcpy(MBR, partition_data, 512);
+        memcpy(MBR, sd_data, 512);
         
-        uart_send_string("Copied data from local to MBR\r\n");
-        uart_dump(MBR);
+        // uart_send_string("Copied data from local to MBR\r\n");
+        // uart_dump(MBR);
 
         // check magic
         if(MBR[510] != 0x55 || MBR[511] != 0xAA) {
@@ -185,20 +190,20 @@ int fat_getpartition(void)
         uart_send_string("\r\n");
 
         // read the boot record
-        if(!sd_readblock(partitionlba, partition_data, 1)) {
+        if(!sd_readblock(partitionlba, sd_data, 1)) {
             uart_send_string("ERROR: Unable to read boot record\r\n");
             return 0;
         }
 
-        uart_send_string("Dumping after reading from lba: ");
-        uart_hex(partitionlba);
-        uart_send_string("\r\n");
-        uart_dump(partition_data);
+        // uart_send_string("Dumping after reading from lba: ");
+        // uart_hex(partitionlba);
+        // uart_send_string("\r\n");
+        // uart_dump(partition_data);
 
-        memcpy(&BPB, partition_data, sizeof(bpb_t));
+        memcpy(&BPB, sd_data, sizeof(bpb_t));
 
-        uart_send_string("Copied data from local to BPB\r\n");
-        uart_dump(&BPB);
+        // uart_send_string("Copied data from local to BPB\r\n");
+        // uart_dump(&BPB);
 
         // check file system type. We don't use cluster numbers for that, but magic bytes
         if( !(BPB.fst[0]=='F' && BPB.fst[1]=='A' && BPB.fst[2]=='T') &&
@@ -261,20 +266,70 @@ unsigned int fat_getcluster(char *fn)
 /**
  * List root directory entries in a FAT file system
  */
+// void fat_listdirectory(void)
+// {
+//     bpb_t *bpb = (bpb_t*) &bss_end;
+//     fatdir_t *dir = (fatdir_t*) &bss_end;
+//     unsigned int root_sec, s;
+//     // find the root directory's LBA
+//     root_sec = ((bpb->spf16 ? bpb->spf16 : bpb->spf32) * bpb->nf) + bpb->rsc;
+//     s = (bpb->nr0 + (bpb->nr1 << 8));
+//     uart_send_string("FAT number of root diretory entries: ");
+//     uart_hex(s);
+//     s *= sizeof(fatdir_t);
+//     if(bpb->spf16==0) {
+//         // adjust for FAT32
+//         root_sec += (bpb->rc-2)*bpb->spc;
+//     }
+//     // add partition LBA
+//     root_sec += partitionlba;
+//     uart_send_string("\nFAT root directory LBA: ");
+//     uart_hex(root_sec);
+//     uart_send_string("\r\n");
+//     // load the root directory
+//     if(sd_readblock(root_sec, (unsigned char*)&bss_end, s/512+1)) {
+//         uart_send_string("\nAttrib Cluster  Size     Name\r\n");
+//         // iterate on each entry and print out
+//         for(;dir->name[0] != 0;dir++) {
+//             // is it a valid entry?
+//             if(dir->name[0]==0xE5 || dir->attr[0]==0xF) continue;
+//             // decode attributes
+//             uart_send(dir->attr[0]& 1?'R':'.');  // read-only
+//             uart_send(dir->attr[0]& 2?'H':'.');  // hidden
+//             uart_send(dir->attr[0]& 4?'S':'.');  // system
+//             uart_send(dir->attr[0]& 8?'L':'.');  // volume label
+//             uart_send(dir->attr[0]&16?'D':'.');  // directory
+//             uart_send(dir->attr[0]&32?'A':'.');  // archive
+//             uart_send(' ');
+//             // staring cluster
+//             uart_hex(((unsigned int)dir->ch)<<16|dir->cl);
+//             uart_send(' ');
+//             // size
+//             uart_hex(dir->size);fat_listdirectory();
+//             uart_send_string(dir->name);
+//             uart_send_string("\r\n");
+//         }
+//     } else {
+//         uart_send_string("ERROR: Unable to load root directory\r\n");
+//     }
+// }
+
 void fat_listdirectory(void)
 {
-    bpb_t *bpb = (bpb_t*) &bss_end;
-    fatdir_t *dir = (fatdir_t*) &bss_end;
+    //unsigned char* sd_data;
+    //bpb_t *bpb = (bpb_t*) &bss_end;
+    //fatdir_t *dir = (fatdir_t*) &bss_end;
+
     unsigned int root_sec, s;
     // find the root directory's LBA
-    root_sec = ((bpb->spf16 ? bpb->spf16 : bpb->spf32) * bpb->nf) + bpb->rsc;
-    s = (bpb->nr0 + (bpb->nr1 << 8));
-    uart_send_string("FAT number of root diretory entries: ");
+    root_sec = ((BPB.spf16 ? BPB.spf16 : BPB.spf32) * BPB.nf) + BPB.rsc;
+    s = (BPB.nr0 + (BPB.nr1 << 8));
+    uart_send_string("FAT number of root directory entries: ");
     uart_hex(s);
     s *= sizeof(fatdir_t);
-    if(bpb->spf16==0) {
+    if(BPB.spf16==0) {
         // adjust for FAT32
-        root_sec += (bpb->rc-2)*bpb->spc;
+        root_sec += (BPB.rc-2)*BPB.spc;
     }
 
     // add partition LBA
@@ -283,8 +338,15 @@ void fat_listdirectory(void)
     uart_hex(root_sec);
     uart_send_string("\r\n");
 
+    int size = (s/512 + 1)*512;
+    unsigned char sd_data[size];
+    zerodata(sd_data, size);
+
+    fatdir_t* dir = (fatdir_t*) sd_data;
     // load the root directory
-    if(sd_readblock(root_sec, (unsigned char*)&bss_end, s/512+1)) {
+    if(sd_readblock(root_sec, sd_data, s/512 + 1)) {
+        uart_dump(sd_data);
+
         uart_send_string("\nAttrib Cluster  Size     Name\r\n");
         // iterate on each entry and print out
         for(;dir->name[0] != 0;dir++) {

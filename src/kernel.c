@@ -20,7 +20,8 @@ void kernel_main(void)
         // read the master boot record and find our partition
         if(fat_getpartition()) {
             // find out file in root directory entries
-            //fat_listdirectory();
+            fat_listdirectory();
+            fat_listdirectory();
             // cluster = fat_getcluster("LICENC~1BRO");
 
             // if(cluster == 0)
