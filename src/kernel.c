@@ -27,8 +27,7 @@ void kernel_main(void)
 
             if(cluster) {
                 // read into memory
-                fat_readfile(cluster);
-                //uart_dump(fat_readfile(cluster));
+                uart_dump(fat_readfile(cluster));
             }
         } else {
             uart_send_string("FAT partition not found???\r\n");

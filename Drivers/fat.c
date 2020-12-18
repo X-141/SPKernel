@@ -246,8 +246,8 @@ void fat_listdirectory(void)
     // find the root directory's LBA
     root_sec = ((BPB.spf16 ? BPB.spf16 : BPB.spf32) * BPB.nf) + BPB.rsc;
     s = (BPB.nr0 + (BPB.nr1 << 8));
-    uart_send_string("FAT number of root directory entries: ");
-    uart_hex(s);
+    //uart_send_string("FAT number of root directory entries: ");
+    //uart_hex(s);
     s *= sizeof(fatdir_t);
     if(BPB.spf16 == 0) {
         // adjust for FAT32
@@ -256,9 +256,9 @@ void fat_listdirectory(void)
 
     // add partition LBA
     root_sec += partitionlba;
-    uart_send_string("\nFAT root directory LBA: ");
-    uart_hex(root_sec);
-    uart_send_string("\r\n");
+    //uart_send_string("\nFAT root directory LBA: ");
+    //uart_hex(root_sec);
+    //uart_send_string("\r\n");
 
     int size = (s/512 + 1)*512;
     unsigned char sd_data[size];
@@ -267,7 +267,7 @@ void fat_listdirectory(void)
     fatdir_t* dir = (fatdir_t*) sd_data;
     // load the root directory
     if(sd_readblock(root_sec, sd_data, s/512 + 1)) {
-        uart_dump(sd_data);
+        //uart_dump(sd_data);
 
         uart_send_string("\nAttrib Cluster  Size     Name\r\n");
         // iterate on each entry and print out
@@ -340,23 +340,22 @@ char *fat_readfile(unsigned int cluster)
     uart_hex(data_sec);
     uart_send_string("\r\n");
     
-    // int size = (BPB.spf16 ? BPB.spf16 : BPB.spf32) + BPB.rsc;
-    // unsigned char sd_data[size * 512];
+    int size = (BPB.spf16 ? BPB.spf16 : BPB.spf32) + BPB.rsc;
+    unsigned char sd_data[size * 512];
 
     // // load FAT table
-    // s = sd_readblock(partitionlba+1, sd_data, size);
+    s = sd_readblock(partitionlba+1, sd_data, size);
     // // end of FAT in memory
-    // data = ptr = &bss_end + 512 + s;
+    data = ptr = &bss_end + 512 + s;
 
-    // // iterate on cluster chain
-    // while(cluster > 1 && cluster < 0xFFF8) {
-    //     // load all sectors in a cluster
-    //     sd_readblock((cluster-2) * BPB.spc + data_sec, ptr, BPB.spc);
-    //     // move pointer, sector per cluster * bytes per sector
-    //     ptr += BPB.spc*(BPB.bps0 + (BPB.bps1 << 8));
-    //     // get the next cluster in chain
-    //     cluster = BPB.spf16 > 0 ? fat16[cluster] : fat32[cluster];
-    // }
-    // return (char*)data;
-    return 0;
+    // iterate on cluster chain
+    while(cluster > 1 && cluster < 0xFFF8) {
+        // load all sectors in a cluster
+        sd_readblock((cluster-2) * BPB.spc + data_sec, ptr, BPB.spc);
+        // move pointer, sector per cluster * bytes per sector
+        ptr += BPB.spc*(BPB.bps0 + (BPB.bps1 << 8));
+        // get the next cluster in chain
+        cluster = BPB.spf16 > 0 ? fat16[cluster] : fat32[cluster];
+    }
+    return (char*)data;
 }
