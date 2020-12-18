@@ -333,64 +333,6 @@ int sd_readblock(unsigned int lba, unsigned char *buffer, unsigned int num)
     return sd_err!=SD_OK || c!=num? 0 : num*512;
 }
 
-
-// int sd_readblock(unsigned int lba, unsigned char* buffer, unsigned int num) {
-//     int r,c,d;
-//     r = 0; c = 0; d = 0;
-    
-//     // Make sure num isn't negative
-//     if(num < 1) num = 1;
-
-//     uart_send_string("sd_readblock lba ");
-//     uart_hex(lba);
-//     uart_send_string(" num ");
-//     uart_hex(num);
-//     uart_send_string("\r\n");
-
-//     if(sd_status(SR_DAT_INHIBIT)) {
-//         sd_err = SD_TIMEOUT;
-//         return 0;
-//     }
-
-//     int start_buff = buffer; // For resetting the address
-//     unsigned int *buff  = (unsigned int*) buffer;
-//     if(sd_scr[0] & SCR_SUPP_CCS) {
-//         if(num > 1 && (sd_scr[0] & SCR_SUPP_SET_BLKCNT)) {
-//             sd_cmd(CMD_SET_BLOCKCNT, num);
-//             if(sd_err) return 0;
-//         }
-
-//         // This may also need to be reset? No documentation avaliable.
-//         *EMMC_BLKSIZECNT = (num << 16) | 512;
-
-//         sd_cmd(num == 1 ? CMD_READ_SINGLE : CMD_READ_MULTI, lba);
-
-//         if(sd_err) return 0;
-//     }  else {
-//         *EMMC_BLKSIZECNT = (1 << 16) | 512;
-//     }
-
-//     while( c < num ) {
-//         if(!(sd_scr[0] & SCR_SUPP_CCS)) {
-//             sd_cmd(CMD_READ_SINGLE, (lba+c)*512);
-//             if(sd_err) return 0;
-//         }
-//         if((r = sd_int(INT_READ_RDY))) {
-//             uart_send_string("\rERROR: Timeout waiting for ready to read\r\n");
-//             sd_err = r;
-//             return 0;
-//         }
-//         for(d = 0; d < 128; d++)
-//             buff[d] = *EMMC_DATA;
-//         c++;
-//         buff += 128;
-//     }
-
-//     if( num > 1 && !(sd_scr[0] & SCR_SUPP_SET_BLKCNT) && (sd_scr[0] & SCR_SUPP_CCS)) 
-//         sd_cmd(CMD_STOP_TRANS,0);
-//     return sd_err!=SD_OK || c!=num? 0 : num*512;
-// }
-
 /**
  * set SD clock to frequency in Hz
  */
