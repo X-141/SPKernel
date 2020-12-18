@@ -29,28 +29,7 @@
 #include "mini_uart.h"
 
 #include "fat.h"
-
-int memcmp(void *s1, void *s2, int n)
-{
-    unsigned char *a=s1,*b=s2;
-    while(n-->0){ if(*a!=*b) { return *a-*b; } a++; b++; }
-    return 0;
-}
-
-int memcpy(void *dest, const void *src, int n) {
-    char* _d = (char *) dest;
-    const char* _s = (const char *) src;
-    for(int x = 0; x < n ; x++)
-        _d[x] = _s[x];
-    return 0;
-}
-
-int zerodata(void *arr, int n) {
-    char* _a = (char *) arr;
-    for(int x = 0; x < n; x++)
-        _a[x] = 0;
-    return 0;
-}
+#include "string.h"
 
 extern unsigned char bss_end;
 
