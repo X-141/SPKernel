@@ -21,4 +21,25 @@ int uint_to_string(char* s, unsigned int value, int size);
 */
 int strcmp(const char* s1, const char *s2);
 
+/**
+ * Compare bytes of data in s1 and s2 for equality.
+ * Return 0 if equal
+ * Return s1[x] - s2[x] difference otherwise.
+*/
+int memcmp(void* s1, void* s2, int n);
+
+/**
+ * Copy n bytes of data from src to dest
+ * Returns 0 always. 
+*/
+int memcpy(void* dest, const void* src, int n);
+
+/**
+ * replaces n bytes of data in arr with 0.
+ * This function is useful for removing garbled
+ * data.
+ * Returns 0 always.
+*/
+int zerodata(void* arr, int n);
+
 #endif
