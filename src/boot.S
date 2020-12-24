@@ -1,4 +1,5 @@
 #include "mm.h"
+#include "peripherals/ExceptionLevelDefines.h"
 
 .section ".text.boot"
 
@@ -42,6 +43,30 @@ proc_0_start:
 	/* Set up CNTVOFF_EL2 */
 	msr CNTVOFF_EL2, xzr
 
+/**
+* Changing exception level to  EL1 
+* Source@: https://github.com/s-matyukevich/raspberry-pi-os/blob/master/docs/lesson02/rpi-os.md
+* Check page 339 of ARM architecture reference manual for more on special registers.
+*/
+	ldr	x0, =SCTLR_VALUE_MMU_DISABLED
+	msr	sctlr_el1, x0		
+
+	ldr	x0, =HCR_VALUE
+	msr	hcr_el2, x0
+
+	ldr	x0, =SCR_VALUE
+	msr	scr_el3, x0
+
+	ldr	x0, =SPSR_VALUE
+	msr	spsr_el3, x0
+
+	adr	x0, el1_entry		
+	msr	elr_el3, x0
+
+	eret
+
+/* Entering Kernel */
+el1_entry:
 	adr	x0, bss_begin
 	adr	x1, bss_end
 	sub	x1, x1, x0

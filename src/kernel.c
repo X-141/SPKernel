@@ -2,18 +2,26 @@
 #include "utils.h"
 #include "delay.h"
 
+#include "timer.h"
+#include "irq.h"
+
 #include "../Apps/Terminal.h"
 
-#include "../Drivers/sd.h"
-#include "../Drivers/fat.h"
+//#include "../Drivers/sd.h"
+//#include "../Drivers/fat.h"
 
 void kernel_main(void)
 {
     
 	uart_init();
     uart_send_string("Initalized UART.");
-    sd_init();
+    //sd_init();
 	uart_send_string("Kernel Date: 12/18/20.\r\n");
+	irq_vector_init();
+	timer_init();
+	enable_interrupt_controller();
+	enable_irq();
+
 
     /**
      * unsigned int cluster;
@@ -37,9 +45,9 @@ void kernel_main(void)
      * }
     */
 
-    if(sd_init() == SD_OK) {
-        fat_getpartition();
-    }
+    //if(sd_init() == SD_OK) {
+    //    fat_getpartition();
+    //}
         
 	init_terminal();
 }
