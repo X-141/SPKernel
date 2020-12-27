@@ -44,7 +44,7 @@ proc_0_start:
 	msr CNTVOFF_EL2, xzr
 
 /**
-* Changing exception level to  EL1 
+* Changing exception level to EL1 
 * Source@: https://github.com/s-matyukevich/raspberry-pi-os/blob/master/docs/lesson02/rpi-os.md
 * Check page 339 of ARM architecture reference manual for more on special registers.
 */
@@ -60,7 +60,7 @@ proc_0_start:
 	ldr	x0, =SPSR_VALUE
 	msr	spsr_el3, x0
 
-	adr	x0, el1_entry		
+	adr	x0, el1_entry
 	msr	elr_el3, x0
 
 	eret

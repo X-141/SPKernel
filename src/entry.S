@@ -1,12 +1,20 @@
 #include "entry.h"
 
+	// Here is a macro used to setup a exception
+	// handler. type is used to refer to the function
+	// that will be executed.
 	.macro handle_invalid_entry type
 	kernel_entry
+	// First param holds type
 	mov	x0, #\type
+	// Second param holds information causing the exception.
 	mrs	x1, esr_el1
+	// Third param holds the instruction that caused the exception.
 	mrs	x2, elr_el1
-	bl	show_invalid_entry_message
-	b	err_hang
+	// Execute function to print out exception information.
+	// defined in irq.c
+	bl	show_invalid_entry_message // def in irq.c
+	b	err_hang				   // here we halt the kernel
 	.endm
 
 	.macro	ventry	label
@@ -14,9 +22,16 @@
 	b	\label
 	.endm
 
+	// kernel_entry handles saving the context
+	// of the processor when an exception occurs.
 	.macro	kernel_entry
-	sub	sp, sp, #S_FRAME_SIZE
+	sub	sp, sp, #S_FRAME_SIZE // Expands to 256
+	// We subtract the stack pointer as stack grows
+	// towards descending addresses.
+	
 	stp	x0, x1, [sp, #16 * 0]
+	// stp allows you to store 2 64bit doublewords
+	// to calculated address.
 	stp	x2, x3, [sp, #16 * 1]
 	stp	x4, x5, [sp, #16 * 2]
 	stp	x6, x7, [sp, #16 * 3]
@@ -34,7 +49,11 @@
 	str	x30, [sp, #16 * 15] 
 	.endm
 
+	// When we return from an exception
+	// We must restore the saved cput context.
 	.macro	kernel_exit
+	// reverse of sdp, we load 2 64bit doublewords
+	// from memory and store them into registers.
 	ldp	x0, x1, [sp, #16 * 0]
 	ldp	x2, x3, [sp, #16 * 1]
 	ldp	x4, x5, [sp, #16 * 2]
@@ -51,7 +70,10 @@
 	ldp	x26, x27, [sp, #16 * 13]
 	ldp	x28, x29, [sp, #16 * 14]
 	ldr	x30, [sp, #16 * 15] 
-	add	sp, sp, #S_FRAME_SIZE		
+	// We no longer need that allocated stack
+	// we simply add to the stack pointer.
+	add	sp, sp, #S_FRAME_SIZE
+	// exception return.
 	eret
 	.endm
 
@@ -68,20 +90,21 @@ vectors:
 	ventry	error_invalid_el1t			// Error EL1t
 
 	ventry	sync_invalid_el1h			// Synchronous EL1h
-	ventry	el1_irq					// IRQ EL1h
+	ventry	el1_irq						// IRQ EL1h
 	ventry	fiq_invalid_el1h			// FIQ EL1h
 	ventry	error_invalid_el1h			// Error EL1h
 
 	ventry	sync_invalid_el0_64			// Synchronous 64-bit EL0
 	ventry	irq_invalid_el0_64			// IRQ 64-bit EL0
 	ventry	fiq_invalid_el0_64			// FIQ 64-bit EL0
-	ventry	error_invalid_el0_64			// Error 64-bit EL0
+	ventry	error_invalid_el0_64		// Error 64-bit EL0
 
 	ventry	sync_invalid_el0_32			// Synchronous 32-bit EL0
 	ventry	irq_invalid_el0_32			// IRQ 32-bit EL0
 	ventry	fiq_invalid_el0_32			// FIQ 32-bit EL0
-	ventry	error_invalid_el0_32			// Error 32-bit EL0
+	ventry	error_invalid_el0_32		// Error 32-bit EL0
 
+// Each label define can be found in entry.h
 sync_invalid_el1t:
 	handle_invalid_entry  SYNC_INVALID_EL1t
 
@@ -127,9 +150,12 @@ fiq_invalid_el0_32:
 error_invalid_el0_32:
 	handle_invalid_entry  ERROR_INVALID_EL0_32
 
+// Here we actually do want to handle
+// this exception. We don't want to use
+// "handle_invalid_entry".
 el1_irq:
 	kernel_entry 
-	bl	handle_irq
+	bl	handle_irq // defined in irq.c
 	kernel_exit 
 
 .globl err_hang

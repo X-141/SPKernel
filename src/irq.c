@@ -1,4 +1,5 @@
 // source@: https://github.com/s-matyukevich/raspberry-pi-os/blob/master/src/lesson03/src/irq.c
+// Modified by Sean Phillips.
 #include "utils.h"
 #include "printf.h"
 #include "timer.h"
@@ -43,7 +44,7 @@ void handle_irq(void)
 	unsigned int irq = get32(IRQ_PENDING_1);
 	switch (irq) {
 		case (SYSTEM_TIMER_IRQ_1):
-			handle_timer_irq();
+			handle_timer_irq(); // defined in timer.c
 			break;
 		default:
         break;

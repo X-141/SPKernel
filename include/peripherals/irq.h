@@ -5,6 +5,8 @@
 #define	_P_IRQ_H
 
 #include "peripherals/base.h"
+// These offsets can be found in pg 112 of BCM2837 document
+// The base address for the ARM interrupt register is 0x3F00B000. 
 
 #define IRQ_BASIC_PENDING	(PBASE+0x0000B200)
 #define IRQ_PENDING_1		(PBASE+0x0000B204)
