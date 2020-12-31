@@ -17,9 +17,9 @@ $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 	@ mkdir -p $(@D)
 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
-$(BUILD_DIR)/%_c.o: $(DRIVER_DIR)/%.c
-	@ mkdir -p $(@D)
-	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
+# $(BUILD_DIR)/%_c.o: $(DRIVER_DIR)/%.c
+# 	@ mkdir -p $(@D)
+# 	$(ARMGNU)-gcc $(COPS) -MMD -c $< -o $@
 
 $(BUILD_DIR)/%_c.o: $(APP_DIR)/%.c
 	@ mkdir -p $(@D)
@@ -31,11 +31,11 @@ $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 CAPPS_FILES = $(wildcard $(APP_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
-DRIVER_FILES = $(wildcard $(DRIVER_DIR)/*.c)
+# DRIVER_FILES = $(wildcard $(DRIVER_DIR)/*.c)
 
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(CAPPS_FILES:$(APP_DIR)/%.c=$(BUILD_DIR)/%_c.o)
-OBJ_FILES += $(DRIVER_FILES:$(DRIVER_DIR)/%.c=$(BUILD_DIR)/%_c.o)
+# OBJ_FILES += $(DRIVER_FILES:$(DRIVER_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 
 

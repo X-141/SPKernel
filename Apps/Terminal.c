@@ -4,7 +4,7 @@
 #include "string.h"
 
 //! include dummy app
-#include "ls.h"
+// #include "ls.h"
 
 // \n == 10
 // \r == 13
@@ -48,7 +48,7 @@ _check_buffer(struct input_buffer* buffer) {
         unsigned int compare_value = strcmp(buffer->_buffer, "ls");
         if (compare_value == 0)
         {
-           list_directory();
+           // list_directory();
         }
         
         //! char str_compare_value[10];

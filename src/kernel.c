@@ -4,24 +4,51 @@
 
 #include "timer.h"
 #include "irq.h"
+#include "fork.h"
+#include "sched.h"
 
 #include "../Apps/Terminal.h"
 
 //#include "../Drivers/sd.h"
 //#include "../Drivers/fat.h"
 
+void process(char *array)
+{
+	while (1){
+		for (int i = 0; i < 5; i++){
+			uart_send(array[i]);
+			wait_cycles(100000);
+		}
+	}
+}
+
 void kernel_main(void)
 {
-    
 	uart_init();
     uart_send_string("Initalized UART.");
     //sd_init();
-	uart_send_string("Kernel Date: 12/18/20.\r\n");
+	uart_send_string("Kernel Date: 12/TEST/20.\r\n");
 	irq_vector_init();
 	timer_init();
 	enable_interrupt_controller();
 	enable_irq();
 
+    // fork.h/c
+	int res = copy_process((unsigned long)&init_terminal, (unsigned long)"12345");
+	if (res != 0) {
+		// printf("error while starting process 1");
+		return;
+	}
+	// // fork.h/c
+	// res = copy_process((unsigned long)&process, (unsigned long)"abcde");
+	// if (res != 0) {
+	// 	// printf("error while starting process 2");
+	// 	return;
+	// }
+
+	while (1){
+		schedule();
+	}	
 
     /**
      * unsigned int cluster;
@@ -49,5 +76,5 @@ void kernel_main(void)
     //    fat_getpartition();
     //}
         
-	init_terminal();
+	// init_terminal();
 }
